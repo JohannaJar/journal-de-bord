@@ -6,15 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, Calendar } from "lucide-react";
 import IntensitySlider from "./IntensitySlider";
 import MoodSelector from "./MoodSelector";
-import TagSelector from "./TagSelector";
 import { toast } from "@/hooks/use-toast";
 
 interface DailyEntryData {
   date: string;
   intensity: number;
   mood: number;
-  triggers: string[];
-  joys: string[];
+  triggers: string;
+  joys: string;
   notes: string;
 }
 
@@ -25,19 +24,9 @@ interface DailyEntryProps {
 const DailyEntry = ({ onSave }: DailyEntryProps) => {
   const [intensity, setIntensity] = useState(5);
   const [mood, setMood] = useState(3);
-  const [triggers, setTriggers] = useState<string[]>([]);
-  const [joys, setJoys] = useState<string[]>([]);
+  const [triggers, setTriggers] = useState("");
+  const [joys, setJoys] = useState("");
   const [notes, setNotes] = useState("");
-
-  const predefinedTriggers = [
-    "Bruit fort", "Changement imprévu", "Fatigue", "Foule", "Lumière vive",
-    "Stress social", "Texture désagréable", "Transition difficile", "Conflit"
-  ];
-
-  const predefinedJoys = [
-    "Musique apaisante", "Temps seul", "Routine habituelle", "Nature",
-    "Animal de compagnie", "Activité créative", "Lecture", "Sport", "Ami proche"
-  ];
 
   const handleSave = () => {
     const entryData: DailyEntryData = {
@@ -59,8 +48,8 @@ const DailyEntry = ({ onSave }: DailyEntryProps) => {
     // Reset form
     setIntensity(5);
     setMood(3);
-    setTriggers([]);
-    setJoys([]);
+    setTriggers("");
+    setJoys("");
     setNotes("");
   };
 
@@ -83,21 +72,25 @@ const DailyEntry = ({ onSave }: DailyEntryProps) => {
           
           <MoodSelector selectedMood={mood} onMoodChange={setMood} />
           
-          <TagSelector
-            title="Principaux déclencheurs"
-            predefinedTags={predefinedTriggers}
-            selectedTags={triggers}
-            onTagsChange={setTriggers}
-            color="yellow"
-          />
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Principaux déclencheurs</label>
+            <Textarea
+              placeholder="Décrivez ce qui a déclenché du stress ou de l'inconfort aujourd'hui..."
+              value={triggers}
+              onChange={(e) => setTriggers(e.target.value)}
+              className="min-h-[80px] zen-focus"
+            />
+          </div>
           
-          <TagSelector
-            title="Sources de plaisir"
-            predefinedTags={predefinedJoys}
-            selectedTags={joys}
-            onTagsChange={setJoys}
-            color="green"
-          />
+          <div className="space-y-3">
+            <label className="text-sm font-medium">Sources de plaisir</label>
+            <Textarea
+              placeholder="Décrivez ce qui vous a apporté de la joie ou du bien-être aujourd'hui..."
+              value={joys}
+              onChange={(e) => setJoys(e.target.value)}
+              className="min-h-[80px] zen-focus"
+            />
+          </div>
           
           <div className="space-y-3">
             <label className="text-sm font-medium">Notes libres</label>

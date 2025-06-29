@@ -2,35 +2,75 @@
 import { useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import KPICard from "./KPICard";
-import { TrendingUp, Heart, AlertTriangle, Smile, Calendar } from "lucide-react";
+import DayDetail from "./DayDetail";
+import { TrendingUp, Heart, AlertTriangle, Smile, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface DashboardProps {
   entries: any[];
 }
 
 const Dashboard = ({ entries }: DashboardProps) => {
-  // Mock data for demonstration
-  const chartData = [
-    { date: '1', intensity: 6, mood: 3 },
-    { date: '2', intensity: 4, mood: 4 },
-    { date: '3', intensity: 7, mood: 2 },
-    { date: '4', intensity: 3, mood: 5 },
-    { date: '5', intensity: 5, mood: 3 },
-    { date: '6', intensity: 2, mood: 4 },
-    { date: '7', intensity: 8, mood: 2 },
-    { date: '8', intensity: 4, mood: 4 },
-    { date: '9', intensity: 3, mood: 5 },
-    { date: '10', intensity: 6, mood: 3 },
-    { date: '11', intensity: 5, mood: 4 },
-    { date: '12', intensity: 2, mood: 5 },
-    { date: '13', intensity: 7, mood: 2 },
-    { date: '14', intensity: 4, mood: 4 },
-    { date: '15', intensity: 3, mood: 5 }
-  ];
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState<any>(null);
 
+  // Génération des données pour le mois actuel
+  const generateMonthData = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const monthData = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDate = new Date(year, month, day);
+      const dateString = dayDate.toISOString().split('T')[0];
+      
+      // Chercher les données réelles pour ce jour
+      const dayEntry = entries.find(entry => entry.date === dateString);
+      
+      // Données fictives si pas d'entrée réelle
+      const intensity = dayEntry?.intensity ?? Math.floor(Math.random() * 8) + 1;
+      const mood = dayEntry?.mood ?? Math.floor(Math.random() * 5) + 1;
+      
+      monthData.push({
+        day,
+        date: dateString,
+        intensity,
+        mood,
+        hasData: !!dayEntry,
+        fullData: dayEntry
+      });
+    }
+    
+    return monthData;
+  };
+
+  const chartData = generateMonthData(currentDate);
+  
   const avgIntensity = (chartData.reduce((sum, entry) => sum + entry.intensity, 0) / chartData.length).toFixed(1);
   const avgMood = (chartData.reduce((sum, entry) => sum + entry.mood, 0) / chartData.length).toFixed(1);
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    const newDate = new Date(currentDate);
+    if (direction === 'prev') {
+      newDate.setMonth(newDate.getMonth() - 1);
+    } else {
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
+    setCurrentDate(newDate);
+  };
+
+  const handleDayClick = (data: any) => {
+    if (data.hasData) {
+      setSelectedDay(data.fullData);
+    }
+  };
+
+  const monthName = currentDate.toLocaleDateString('fr-FR', { 
+    month: 'long', 
+    year: 'numeric' 
+  });
 
   return (
     <div className="space-y-6">
@@ -69,15 +109,35 @@ const Dashboard = ({ entries }: DashboardProps) => {
       {/* Main Chart */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Évolution mensuelle - Intensité & Humeur
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Évolution mensuelle - {monthName}
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('prev')}
+                className="zen-focus"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => navigateMonth('next')}
+                className="zen-focus"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[400px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
+              <AreaChart data={chartData} onClick={handleDayClick}>
                 <defs>
                   <linearGradient id="intensityGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--calm-blue))" stopOpacity={0.3}/>
@@ -90,7 +150,7 @@ const Dashboard = ({ entries }: DashboardProps) => {
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis 
-                  dataKey="date"
+                  dataKey="day"
                   stroke="hsl(var(--muted-foreground))"
                 />
                 <YAxis 
@@ -102,6 +162,25 @@ const Dashboard = ({ entries }: DashboardProps) => {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "var(--radius)"
                   }}
+                  labelFormatter={(value) => `Jour ${value}`}
+                  content={(props) => {
+                    if (props.active && props.payload && props.payload.length > 0) {
+                      const data = props.payload[0].payload;
+                      return (
+                        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+                          <p className="font-medium">Jour {data.day}</p>
+                          <p className="text-calm-blue">Intensité: {data.intensity}/10</p>
+                          <p className="text-soft-green">Humeur: {data.mood}/5</p>
+                          {data.hasData && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Cliquer pour voir les détails
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -110,6 +189,7 @@ const Dashboard = ({ entries }: DashboardProps) => {
                   fillOpacity={1}
                   fill="url(#intensityGradient)"
                   strokeWidth={2}
+                  className="cursor-pointer"
                 />
                 <Area
                   type="monotone"
@@ -118,6 +198,7 @@ const Dashboard = ({ entries }: DashboardProps) => {
                   fillOpacity={1}
                   fill="url(#moodGradient)"
                   strokeWidth={2}
+                  className="cursor-pointer"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -132,6 +213,9 @@ const Dashboard = ({ entries }: DashboardProps) => {
               <span className="text-sm text-muted-foreground">Humeur</span>
             </div>
           </div>
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            Cliquez sur un jour avec des données pour voir les détails
+          </p>
         </CardContent>
       </Card>
 
@@ -191,6 +275,14 @@ const Dashboard = ({ entries }: DashboardProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Day Detail Modal */}
+      {selectedDay && (
+        <DayDetail
+          data={selectedDay}
+          onClose={() => setSelectedDay(null)}
+        />
+      )}
     </div>
   );
 };
