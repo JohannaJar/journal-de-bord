@@ -47,6 +47,20 @@ const Dashboard = ({ entries }: DashboardProps) => {
   };
 
   const chartData = generateMonthData(currentDate);
+
+  const triggerCounts = entries.reduce<Record<string, number>>((acc, entry) => {
+    entry.triggers?.forEach(t => {
+      acc[t] = (acc[t] ?? 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const topTriggers = Object.entries(triggerCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const uniqueTriggerCount = Object.keys(triggerCounts).length;
+  const maxCount = topTriggers[0]?.[1] ?? 0;
   
   const avgIntensity = (chartData.reduce((sum, entry) => sum + entry.intensity, 0) / chartData.length).toFixed(1);
   const avgMood = (chartData.reduce((sum, entry) => sum + entry.mood, 0) / chartData.length).toFixed(1);
@@ -92,7 +106,7 @@ const Dashboard = ({ entries }: DashboardProps) => {
         />
         <KPICard
           title="Déclencheurs identifiés"
-          value="12"
+          value={uniqueTriggerCount}
           subtitle="Patterns reconnus"
           icon={AlertTriangle}
           color="yellow"
@@ -230,20 +244,22 @@ const Dashboard = ({ entries }: DashboardProps) => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {["Bruit fort", "Changement imprévu", "Fatigue", "Foule"].map((trigger, index) => (
-                <div key={trigger} className="flex justify-between items-center">
-                  <span className="text-sm">{trigger}</span>
+              {topTriggers.length ? topTriggers.map(([name, count]) => (
+                <div key={name} className="flex justify-between items-center">
+                  <span className="text-sm">{name}</span>
                   <div className="flex items-center gap-2">
                     <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                      <div 
+                      <div
                         className="h-full bg-warm-yellow rounded-full"
-                        style={{ width: `${(4 - index) * 25}%` }}
-                      ></div>
+                        style={{ width: `${(count / maxCount) * 100}%` }}
+                      />
                     </div>
-                    <span className="text-xs text-muted-foreground">{4 - index}x</span>
+                    <span className="text-xs text-muted-foreground">{count}x</span>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <p className="text-muted-foreground text-sm">Aucun déclencheur enregistré.</p>
+              )}
             </div>
           </CardContent>
         </Card>
