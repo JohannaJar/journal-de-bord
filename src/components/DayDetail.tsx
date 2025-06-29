@@ -7,8 +7,8 @@ interface DayDetailData {
   date: string;
   intensity: number;
   mood: number;
-  triggers: string;
-  joys: string;
+  triggers: string[];
+  joys: string[];
   notes: string;
 }
 
@@ -62,26 +62,34 @@ const DayDetail = ({ data, onClose }: DayDetailProps) => {
             </div>
           </div>
 
-          {data.triggers && (
+          {data.triggers && data.triggers.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warm-yellow" />
                 <h3 className="font-medium text-warm-yellow">Déclencheurs</h3>
               </div>
-              <div className="p-3 bg-warm-yellow/10 rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">{data.triggers}</p>
+              <div className="space-y-2">
+                {data.triggers.map((trigger, index) => (
+                  <div key={index} className="p-2 bg-warm-yellow/10 rounded-lg">
+                    <p className="text-sm">{trigger}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {data.joys && (
+          {data.joys && data.joys.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Heart className="h-4 w-4 text-soft-green" />
                 <h3 className="font-medium text-soft-green">Sources de plaisir</h3>
               </div>
-              <div className="p-3 bg-soft-green/10 rounded-lg">
-                <p className="text-sm whitespace-pre-wrap">{data.joys}</p>
+              <div className="space-y-2">
+                {data.joys.map((joy, index) => (
+                  <div key={index} className="p-2 bg-soft-green/10 rounded-lg">
+                    <p className="text-sm">{joy}</p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
